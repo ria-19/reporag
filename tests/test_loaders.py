@@ -1,5 +1,5 @@
 from pathlib import Path
-from document_processor import GitHubRepoLoader, WebContentLoader 
+from src.document_processor import GitHubRepoLoader, WebContentLoader 
 
 # --- TEST 1: GitHubRepoLoader ---
 def test_github():

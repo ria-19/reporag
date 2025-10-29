@@ -96,7 +96,7 @@ class GitHubRepoLoader:
     def load_file(self, file_path: Path) -> Dict[str, Any]:
         """Load single file with metadata"""
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
                 content = f.read()
             
             return {

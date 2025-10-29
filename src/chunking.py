@@ -1,30 +1,28 @@
 """
 Smart Chunking for Code
-Understanding: Code structure matters for retrieval
+Goal: Transform large, clean documents into small, optimized pieces of context that are both semantically coherent 
+and sized perfectly for both the vector database and LLM.
 """
 
 from typing import List, Dict
-from langchain.text_splitter import (
-    RecursiveCharacterTextSplitter,
-    Language
-)
+from langchain_text_splitters import (RecursiveCharacterTextSplitter, Language)
 
 # ============================================================
 # 1. CODE-AWARE CHUNKING
 # ============================================================
 
-class CodeAwareChunker:
+class CodeAwareChunker:  # For code, the atomic unit of meaning is not a paragraph, but a logical block like a function or a class.
     """
     Chunk code while preserving structure
     
     Key Insights:
     - Don't split functions in middle
-    - Keep imports with related code
+    - Keep imports with related code 
     - Preserve class structure
     - Add context headers
     """
     
-    def __init__(self):
+    def __init__(self):  # Strategy Pattern
         # Different splitters for different languages
         self.splitters = {
             'python': RecursiveCharacterTextSplitter.from_language(
@@ -51,18 +49,19 @@ class CodeAwareChunker:
             separators=["\n\n", "\n", " ", ""]
         )
     
-    def add_context_header(self, chunk: str, metadata: Dict) -> str:
+    # Enrichment
+    def add_context_header(self, chunk: str, metadata: Dict) -> str: 
         """
         Add context to chunk for better retrieval
         
         Example:
-```python
-        # File: src/utils/helpers.py
-        # Function: calculate_similarity
-        
-        def calculate_similarity(vec1, vec2):
-            ...
-```
+        ```python
+            # File: src/utils/helpers.py
+            # Function: calculate_similarity
+            
+            def calculate_similarity(vec1, vec2):
+                ...
+        ```
         """
         header_parts = []
         
@@ -71,7 +70,7 @@ class CodeAwareChunker:
             header_parts.append(f"File: {metadata['file_path']}")
         
         # Function/class name (extract from chunk)
-        if 'language' in metadata and metadata['language'] == 'python':
+        if 'language' in metadata and metadata['language'] == 'python': # heuristic filter
             # Extract function/class names
             import re
             func_match = re.search(r'def\s+(\w+)', chunk)
@@ -84,7 +83,8 @@ class CodeAwareChunker:
         
         if header_parts:
             header = '\n'.join(header_parts) + '\n\n'
-            return header + chunk
+            # A form of Metadata Indexing (injecting the most important metadata directly into text to be embedded.
+            return header + chunk 
         
         return chunk
     
@@ -149,7 +149,7 @@ class SemanticChunker:
     def __init__(self, model_name='all-MiniLM-L6-v2'):
         from sentence_transformers import SentenceTransformer
         self.model = SentenceTransformer(model_name)
-        self.similarity_threshold = 0.7
+        self.similarity_threshold = 0.25
     
     def split_into_sentences(self, text: str) -> List[str]:
         """Split text into sentences"""
@@ -178,6 +178,7 @@ class SemanticChunker:
         chunks = []
         current_chunk = [sentences[0]]
         current_embedding = embeddings[0]
+        sentence_count = 1
         
         for i in range(1, len(sentences)):
             # Compute similarity with current chunk
@@ -198,8 +199,13 @@ class SemanticChunker:
             else:
                 # Add to current chunk
                 current_chunk.append(sentences[i])
+                new_sentence_count = sentence_count + 1
+                # Calculate the weighted sum and divide by the new count (N+1)
+                weighted_sum = (current_embedding * sentence_count) + embeddings[i]
                 # Update embedding (average)
-                current_embedding = (current_embedding + embeddings[i]) / 2
+                current_embedding = weighted_sum / new_sentence_count
+                # Update the count for the next iteration
+                sentence_count = new_sentence_count
         
         # Add last chunk
         if current_chunk:
@@ -249,34 +255,34 @@ def compare_chunking_strategies(text: str):
 if __name__ == "__main__":
     # Test with sample code
     sample_code = """
-import numpy as np
-from typing import List
+    import numpy as np
+    from typing import List
 
-class VectorDatabase:
-    def __init__(self, dimension: int):
-        self.dimension = dimension
-        self.vectors = []
-        self.metadata = []
-    
-    def add(self, vector: np.ndarray, metadata: dict):
-        '''Add vector to database'''
-        if len(vector) != self.dimension:
-            raise ValueError("Wrong dimension")
-        self.vectors.append(vector)
-        self.metadata.append(metadata)
-    
-    def search(self, query: np.ndarray, k: int = 5):
-        '''Search for similar vectors'''
-        # Compute similarities
-        similarities = []
-        for vec in self.vectors:
-            sim = np.dot(query, vec)
-            similarities.append(sim)
+    class VectorDatabase:
+        def __init__(self, dimension: int):
+            self.dimension = dimension
+            self.vectors = []
+            self.metadata = []
         
-        # Return top-k
-        indices = np.argsort(similarities)[-k:][::-1]
-        return indices
-"""
+        def add(self, vector: np.ndarray, metadata: dict):
+            '''Add vector to database'''
+            if len(vector) != self.dimension:
+                raise ValueError("Wrong dimension")
+            self.vectors.append(vector)
+            self.metadata.append(metadata)
+        
+        def search(self, query: np.ndarray, k: int = 5):
+            '''Search for similar vectors'''
+            # Compute similarities
+            similarities = []
+            for vec in self.vectors:
+                sim = np.dot(query, vec)
+                similarities.append(sim)
+            
+            # Return top-k
+            indices = np.argsort(similarities)[-k:][::-1]
+            return indices
+    """
     
     # Test chunking
     chunker = CodeAwareChunker()
@@ -296,3 +302,86 @@ class VectorDatabase:
         print(f"\nChunk {chunk['metadata']['chunk_id']}:")
         print(chunk['content'][:200])
         print("...")
+        
+        
+        
+# ============================================================
+# TODO: Future Enhancements and Scalability Planning
+# ============================================================
+
+# --- 1. CORE SCALABILITY & PERFORMANCE (High Priority) ---
+
+# TODO: OPTIMIZATION 1.1: STREAMING (MEMORY SAFETY)
+"""
+What: Redesign the chunking orchestrator (e.g., `chunk_all`) to accept a **generator of documents** from the Loader step and use a generator pattern (`yield`) to produce **chunks** one by one.
+Why: Prevents **Out-of-Memory (OOM) errors** by avoiding the creation of a single, massive list of *all* chunks in memory. It maintains a constant, low memory footprint, making the ingestion pipeline memory-safe regardless of the final chunk count.
+When: Before processing large datasets (tens of thousands of documents or more) where the aggregate chunk list size could exceed available RAM.
+"""
+# TODO: OPTIMIZATION 1.2: PARALLELISM (INGESTION THROUGHPUT)
+"""
+What: Implement Python's `concurrent.futures.ProcessPoolExecutor` in the chunking orchestrator to run the `chunk_document` function concurrently across all available CPU cores.
+Why: Chunking is an **embarrassingly parallel** and often **CPU-bound** task (especially with advanced parsers). Utilizing all CPU cores drastically reduces the total wall-clock time required to process the entire document set, maximizing ingestion throughput.
+When: Immediately, as the current synchronous processing is a major bottleneck for any medium-to-large codebase.
+"""
+# TODO: OPTIMIZATION 1.3: INCREMENTAL PROCESSING (STATE MANAGEMENT)
+"""
+What: Introduce a persistence layer to store the **Content Hash** (e.g., SHA-256) of a document's content after successful chunking. The chunking orchestrator will only call `chunk_document()` if the document's current hash is different from the stored hash.
+Why: Enables highly efficient **incremental updates** specifically for the CPU-intensive chunking step. It saves significant CPU resources and time by preventing the re-execution of the complex chunking logic on unchanged documents.
+When: High Priority. Implement once the system starts seeing high data volume or is put on a regular update schedule. 
+"""
+
+# --- 2. RESILIENCE & CODE QUALITY ---
+
+# TODO: QUALITY 2.1: ROBUST ERROR ISOLATION
+"""
+What: In the chunking orchestrator, wrap the call to `chunk_document(doc)` in a dedicated `try...except` block.
+Why: Implements **fault tolerance**. A failure to parse/chunk one malformed document will not cause a **cascading failure** that halts the chunking of all other documents in the queue.
+When: In v1 improvement (fundamental for pipeline stability).
+"""
+# TODO: QUALITY 2.2: REFINE ERROR RECOVERY (Dead Letter Queue)
+"""
+What: Enhance the error handling (2.1) to serialize the failed document and its full error traceback, writing it to a designated storage location (a "dead letter queue" directory or file).
+Why: Allows engineers to later inspect and reprocess specific documents that failed due to temporary or fixable issues, ensuring **zero data loss** without blocking the main pipeline.
+When: Implement as part of the v2 production pipeline readiness.
+"""
+
+# --- 3. DATA QUALITY & EXTENSIBILITY ---
+
+# TODO: DATA QUALITY 3.1: LANGUAGE-AWARE CONTEXT EXTRACTION (ROBUSTNESS)
+"""
+What: Replace the simple regex in `add_context_header` with dedicated language parsers (e.g., `tree-sitter` or Python's built-in `ast` module) to build an Abstract Syntax Tree (AST).
+Why: An AST is infinitely more robust and accurate than brittle regex. It guarantees correct extraction of function, class, and method signatures, regardless of multi-line definitions or decorators.
+When: Before scaling to complex, production codebases with non-trivial syntax.
+"""
+
+# TODO: EXTENSIBILITY 3.2: REFACTOR FOR STRATEGY PATTERN (MAINTAINABILITY)
+"""
+What: Refactor the language-specific context extraction logic into separate classes (e.g., `PythonContextAdder`, `JSContextAdder`) based on the Strategy Design Pattern.
+Why: Prevents the `add_context_header` method from becoming an unmaintainable `if/elif/else` nightmare. It cleanly isolates language-specific complexity, making the pipeline easy to extend (add a new language) and maintain.
+When: Immediately after implementing the AST-based parsers (3.1).
+"""
+# TODO: OPTIMIZATION 3.3: NON-ADJACENT CHUNK MERGING (ADVANCED SEMANTIC ACCURACY)
+"""
+What: Introduce a check that compares the new sentence's embedding not just to the current running chunk, but also to the embeddings of ALL previously finalized chunks. If a strong match is found with an older chunk, the algorithm could potentially merge the new sentence/section with that non-adjacent, similar chunk (e.g., merging Chunk A2 back into Chunk A1).
+Why: Overcomes the limitation of the current **"greedy" algorithm** (which only looks backward one step). This preserves **global semantic context** by handling complex document structures (A-B-A, where Topic A is revisited), resulting in larger, more cohesive, and semantically pure final chunks. 
+When: Low Priority/Phase 2. Implement after all performance and basic robustness issues are solved, as this method is **highly computationally expensive** due to the need for multiple cosine similarity calculations per sentence.
+"""
+# --- 4. CONFIGURATION MANAGEMENT (Maintainability) ---
+
+# TODO: MAINTENANCE 4.1: EXTERNALIZE CHUNKING PARAMETERS
+"""
+What: Move all chunking-related parameters (e.g., `similarity_threshold`, `max_chunk_size`) from being hard-coded constants to being loaded from an external configuration source (e.g., YAML or Environment Variables).
+Why: Decouples behavior from source code. This is essential for rapid experimentation (A/B testing) and tuning production performance without requiring a code change or redeployment.
+"""
+
+# ============================================================
+# METRICS FOR EVALUATION
+# ============================================================
+
+# METRIC: CHUNKING THROUGHPUT
+# Formula: Total documents chunked / Time taken (e.g., documents per second)
+# Goal: Track the raw processing speed. Directly tied to Parallelism (1.2) fix.
+
+# METRIC: MEMORY FOOTPRINT (PEAK)
+# Formula: Maximum memory usage (GB) during a full ingestion run.
+# Goal: Track efficiency and stability. Should remain constant regardless of dataset size (related to Streaming 1.1).

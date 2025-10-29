@@ -8,6 +8,7 @@ Goal: Transform messy, noisy source into a clean, structured, and context-rich d
 from typing import List, Dict, Any
 import os
 from pathlib import Path
+from tqdm import tqdm
 
 # ============================================================
 # 1. CODE REPOSITORY LOADER
@@ -113,11 +114,16 @@ class GitHubRepoLoader:
         
         print(f"Loading repository: {self.repo_path}")
         
-        for file_path in self.repo_path.rglob('*'):
-            if file_path.is_file() and self.should_process(file_path):
-                doc = self.load_file(file_path)
-                if doc:
-                    documents.append(doc)
+        file_iterator = self.repo_path.rglob('*') # rglob is a generator, so it yields files one by one.
+        
+        try:
+            for file_path in tqdm(file_iterator, desc="Processing GitHub Files"):  
+                if file_path.is_file() and self.should_process(file_path):
+                    doc = self.load_file(file_path)
+                    if doc:
+                        documents.append(doc)
+        except Exception as e:
+            print(f"🛑 Critical error during repository traversal: {e}")
         
         print(f"✅ Loaded {len(documents)} files")
         return documents
@@ -180,7 +186,7 @@ class WebContentLoader:
     def load_multiple(self, urls: List[str]) -> List[Dict[str, Any]]:
         """Load multiple URLs"""
         documents = []
-        for url in urls:
+        for url in tqdm(urls, desc="Fetching URLs"):
             doc = self.load_url(url)
             if doc:
                 documents.append(doc)
@@ -283,20 +289,41 @@ class DocumentProcessor: # Facade Design Pattern
         
         # GitHub repos
         if 'github_repos' in config:
+            print("\n==============================================")
+            print("🚀 Starting: GitHub Repository Ingestion")
+            print("==============================================")
+            
             for repo_path in config['github_repos']:
-                docs = self.process_github_repo(repo_path)
-                all_documents.extend(docs)
-        
+                try:
+                    docs = self.process_github_repo(repo_path)
+                    all_documents.extend(docs)
+                except Exception as e:
+                    print(f"❌ Failed to process GitHub repo at {repo_path}. Error: {e}")        
         # URLs
         if 'urls' in config:
-            docs = self.process_urls(config['urls'])
-            all_documents.extend(docs)
+            print("\n==============================================")
+            print("🌐 Starting: Web Content (URLs) Fetch")
+            print("==============================================")
+            
+            try:
+                docs = self.process_urls(config['urls'])
+                all_documents.extend(docs)
+            except Exception as e:
+                print(f"❌ Failed to process the list of URLs. Error: {e}")        
         
-        
-        #Todo
-        # if 'videos' in config:
-        #     docs = self.process_videos(config['videos'])
-        #     all_documents.extend(docs)
+        # --- 3. Videos (Future Implementation) ---
+        if 'videos' in config:
+            print("\n==============================================")
+            print("🎬 Starting: Video Transcript Loading")
+            print("==============================================")
+            
+            try:
+                # When implemented, this will trigger a tqdm bar
+                # docs = self.process_videos(config['videos']) 
+                # all_documents.extend(docs)
+                print("🚧 Video Transcript Loader is pending implementation.")
+            except Exception as e:
+                print(f"❌ Failed to process the list of videos. Error: {e}")
         
         print(f"\n✅ Total documents loaded: {len(all_documents)}")
         return all_documents

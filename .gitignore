@@ -1,0 +1,71 @@
+# =========================================================
+# 1. PYTHON SPECIFIC
+# =========================================================
+
+# Compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+/bin/
+/lib/
+/include/
+pip-log.txt
+
+# Distribution / Packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+*.egg-info/
+
+# Testing and Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+nosetests.xml
+coverage.xml
+
+# ---------------------------------------------------------
+# 2. RAG PIPELINE ARTIFACTS (Generated/Large Files)
+# ---------------------------------------------------------
+
+# Ignore directories containing large, generated files:
+# Data output (vector stores, processed documents)
+data/
+
+# Model checkpoints, embedding weights, or large model files
+models/
+
+# Volatile experiment files
+notebooks/
+
+# Runtime files and logs (can be large or sensitive)
+*.log
+.env
+*.env
+
+# ---------------------------------------------------------
+# 3. TEST ARTIFACTS / IDE / TEMP
+# ---------------------------------------------------------
+
+# IDE/Editor Files
+.vscode/
+.idea/
+*.sublime-project
+*.swp
+
+# Explicitly ignore files *inside* test_repo that should be ignored
+# Node modules or dependencies that might appear in a cloned/test repo
+/test_repo/node_modules/
+/test_repo/.gitignore 
+
+# NOTE: The top-level 'test_repo' directory is NOT ignored and will be tracked.

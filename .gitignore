@@ -9,7 +9,7 @@ __pycache__/
 *.pyd
 *.$py.class
 
-# Virtual environments
+# Virtual environments & Package management
 .venv/
 venv/
 env/
@@ -17,6 +17,8 @@ env/
 /lib/
 /include/
 pip-log.txt
+.ruff_cache/
+.mypy_cache/
 
 # Distribution / Packaging
 build/
@@ -34,13 +36,13 @@ htmlcov/
 nosetests.xml
 coverage.xml
 
-# ---------------------------------------------------------
+# =========================================================
 # 2. RAG PIPELINE ARTIFACTS (Generated/Large Files)
-# ---------------------------------------------------------
+# =========================================================
 
-# Ignore directories containing large, generated files:
-# Data output (vector stores, processed documents)
+# Data output (LanceDB, KuzuDB, WAL files, processed documents)
 data/
+reporag_index/
 
 # Model checkpoints, embedding weights, or large model files
 models/
@@ -48,14 +50,21 @@ models/
 # Volatile experiment files
 notebooks/
 
-# Runtime files and logs (can be large or sensitive)
+# Runtime files, logs, and secrets (CRITICAL)
 *.log
 .env
 *.env
 
-# ---------------------------------------------------------
-# 3. TEST ARTIFACTS / IDE / TEMP
-# ---------------------------------------------------------
+# =========================================================
+# 3. OS / IDE / TEMP
+# =========================================================
+
+# OS specific
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
 
 # IDE/Editor Files
 .vscode/
@@ -64,8 +73,5 @@ notebooks/
 *.swp
 
 # Explicitly ignore files *inside* test_repo that should be ignored
-# Node modules or dependencies that might appear in a cloned/test repo
 /test_repo/node_modules/
-/test_repo/.gitignore 
-
-# NOTE: The top-level 'test_repo' directory is NOT ignored and will be tracked.
+/test_repo/.gitignore

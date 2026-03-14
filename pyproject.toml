@@ -1,0 +1,78 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "rag-system"
+version = "0.1.0"
+description = "Local-first codebase intelligence system"
+readme = "README.md"
+requires-python = ">=3.11"
+
+dependencies = [
+    # API
+    "fastapi>=0.111.0",
+    "uvicorn[standard]>=0.29.0",
+    "python-multipart>=0.0.9",    # FastAPI form data
+    # Storage
+    "lancedb>=0.6.0",
+    "kuzu>=0.4.0",
+    "pyarrow>=15.0.0",            # LanceDB schema + Arrow types
+    # Embedding
+    "sentence-transformers>=3.0.0",
+    "numpy>=1.26.0",
+    # Parsing
+    "tree-sitter>=0.22.0",
+    "tree-sitter-python>=0.22.0",
+    "tree-sitter-javascript>=0.22.0",
+    "tree-sitter-typescript>=0.22.0",
+    # LLM providers
+    "ollama>=0.2.0",
+    "google-generativeai>=0.7.0",
+    # Config + validation
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    # MCP (stretch goal — optional)
+    "mcp>=1.0.0",
+    "einops>=0.8.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "httpx>=0.27.0",              # FastAPI test client
+    "ruff>=0.4.0",                # linter + formatter
+    "mypy>=1.10.0",               # type checker
+]
+
+[project.scripts]
+reporag-api  = "api:app"
+reporag-eval = "eval:main"
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "I",    # isort
+    "UP",   # pyupgrade
+]
+ignore = [
+    "E501", # line too long — ruff format handles this
+]
+
+[tool.mypy]
+python_version = "3.11"
+strict = false          # turn on incrementally
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]

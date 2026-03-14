@@ -1,0 +1,12 @@
+{"repo": "micrograd", "op": "file_indexed", "kwargs": {"path": "test/test_engine.py"}, "ts": 1773072987.8276448}
+{"repo": "micrograd", "op": "file_indexed", "kwargs": {"path": "micrograd/engine.py"}, "ts": 1773072987.829246}
+{"repo": "micrograd", "op": "file_indexed", "kwargs": {"path": "micrograd/nn.py"}, "ts": 1773072987.8295639}
+{"repo": "micrograd", "op": "edges_written", "kwargs": {}, "ts": 1773072987.982381}
+{"repo": "minGPT", "op": "file_indexed", "kwargs": {"path": "tests/test_huggingface_import.py"}, "ts": 1773073029.883349}
+{"repo": "minGPT", "op": "file_indexed", "kwargs": {"path": "mingpt/model.py"}, "ts": 1773073029.8851259}
+{"repo": "minGPT", "op": "file_indexed", "kwargs": {"path": "projects/adder/adder.py"}, "ts": 1773073029.885414}
+{"repo": "minGPT", "op": "file_indexed", "kwargs": {"path": "projects/chargpt/chargpt.py"}, "ts": 1773073029.885657}
+{"repo": "minGPT", "op": "file_indexed", "kwargs": {"path": "mingpt/bpe.py"}, "ts": 1773073041.4637702}
+{"repo": "minGPT", "op": "file_indexed", "kwargs": {"path": "mingpt/utils.py"}, "ts": 1773073041.464275}
+{"repo": "minGPT", "op": "file_indexed", "kwargs": {"path": "mingpt/trainer.py"}, "ts": 1773073041.4643772}
+{"repo": "minGPT", "op": "edges_written", "kwargs": {}, "ts": 1773073041.63804}
